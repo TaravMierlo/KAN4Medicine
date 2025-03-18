@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 
 import torch
 
-from kan import KAN
+from kan import *
 
 import MedicalDataLoader as mdl
 
@@ -28,15 +28,15 @@ def kan_prune(name, X_train, X_test, y_train, y_test):
     if not os.path.exists(pruned_net_path):
         os.makedirs(pruned_net_path)
 
-    model = KAN(width=[X_train.shape[1], 1])
+    model = MultKAN(width=[X_train.shape[1], 1])
 
-    # # 绘制初始网络图
-    # plt.figure()
-    # model(X_train_tensor)
-    # model.plot(beta=100, folder=formula_path)
-    # fig_path = f'../output/{name}_initial_plot.png'
-    # plt.savefig(fig_path)
-    # plt.close()
+    # Draw the initial network diagram
+    plt.figure()
+    model(X_train_tensor)
+    model.plot(beta=100, folder=formula_path)
+    fig_path = f'../output/{name}_initial_plot.png'
+    plt.savefig(fig_path)
+    plt.close()
 
     dataset = {
         'train_input': X_train_tensor,
@@ -51,21 +51,21 @@ def kan_prune(name, X_train, X_test, y_train, y_test):
     def test_acc():
         return torch.mean((torch.round(model(X_test_tensor)) == y_test_tensor).float())
 
-    _ = model.train(dataset, opt="LBFGS", metrics=(train_acc, test_acc), steps=20, lamb=0.01, lamb_entropy=10.)
+    _ = model.fit(dataset, opt="LBFGS", metrics=(train_acc, test_acc), steps=20, lamb=0.01, lamb_entropy=10.)
 
-    # # 绘制训练后的网络图
-    # plt.figure()
-    # model(X_train_tensor)
-    # model.plot(folder=formula_path, scale=1.0)
-    # eps_fig_path = f'../output/{name}_trained_plot.eps'
-    # plt.savefig(eps_fig_path, format='eps', dpi=400)
-    # png_fig_path = f'../output/{name}_trained_plot.png'
-    # plt.savefig(png_fig_path, format='png', dpi=400)
-    # plt.close()
+    # Draw the trained network diagram
+    plt.figure()
+    model(X_train_tensor)
+    model.plot(folder=formula_path, scale=1.0)
+    eps_fig_path = f'../output/{name}_trained_plot.eps'
+    plt.savefig(eps_fig_path, format='eps', dpi=400)
+    png_fig_path = f'../output/{name}_trained_plot.png'
+    plt.savefig(png_fig_path, format='png', dpi=400)
+    plt.close()
 
-    # 绘制剪枝后的网络
-    # plt.figure()
-    model = model.prune(threshold=0.01)
+    # Plotting the pruned network
+    plt.figure()
+    model = model.prune(node_th=0.01, edge_th=0.01)
     model(X_train_tensor)
     model.plot(folder=formula_path, scale=1.0)
     fig_path = os.path.join(pruned_net_path, f'{name}_prune_plot.eps')
